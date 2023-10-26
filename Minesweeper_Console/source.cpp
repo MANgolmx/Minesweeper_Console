@@ -302,7 +302,7 @@ int ManageInput()
 		return 0;
 	}
 
-	if (input == 13) {
+	if (input == 13 && !_map[_cursorPosition.x][_cursorPosition.y].isFlagged) {
 		if (!_map[_cursorPosition.x][_cursorPosition.y].isMine && CalculateAdjascentMines(_cursorPosition) == 0)
 			OpenCells(_cursorPosition);
 		else
