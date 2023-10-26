@@ -1,8 +1,10 @@
-# Minesweeper_Console
-Controls
+# Controls
 [Arrow keys] - move cursor
+
 [TAB] - place "!"
+
 [Q] - place "?"
+
 [ENTER] - open cell
 
-Once all cells are open you will win.
+To win you need to open all non-mine cells
