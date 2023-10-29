@@ -246,6 +246,10 @@ void OpenCells(Vector2 pos)
 	if (pos.x < _mapSize.x - 1) OpenCells({pos.x + 1, pos.y});
 	if (pos.y > 0) OpenCells({pos.x, pos.y - 1});
 	if (pos.y < _mapSize.y) OpenCells({pos.x, pos.y + 1});
+	if (pos.x > 0 && pos.y > 0) OpenCells({ pos.x - 1, pos.y - 1 });
+	if (pos.x > 0 && pos.y < _mapSize.y - 1) OpenCells({ pos.x - 1, pos.y + 1 });
+	if (pos.x < _mapSize.x - 1 && pos.y > 0) OpenCells({ pos.x + 1, pos.y - 1 });
+	if (pos.x < _mapSize.x - 1 && pos.y < _mapSize.y - 1) OpenCells({ pos.x + 1, pos.y + 1 });
 }
 
 //Scans and handles all input
