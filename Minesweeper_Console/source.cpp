@@ -1,6 +1,9 @@
 #include <iostream>
+#include <fstream>
 #include <windows.h>
 #include <conio.h>
+
+using namespace std;
 
 #pragma region COLOR DEFINE
 #define COLOR_BLACK      0
@@ -135,7 +138,6 @@ int CalculateAdjascentMines(Vector2 pos)
 	return adjascentMines;
 } 
 
-//Prints color coded map
 void PrintMap()
 {
 	for (int i = 0; i < _mapSize.x; i++) {
@@ -338,6 +340,55 @@ int CheckWin()
 			if (!_map[i][j].isOpened && !_map[i][j].isMine)
 				return 0;
 	return 1;
+}
+
+void SaveGame(int mineCount)
+{
+	ofstream saveFile("save.bin", ios::out | ios::binary);
+	if (!saveFile)
+	{
+		printf("Save file was not opened!\n");
+		return;
+	}
+
+	saveFile.write((char*)&_mapSize, sizeof(Vector2));
+	saveFile.write((char*)&mineCount, sizeof(int));
+	for (int i = 0; i < _mapSize.x; i++)
+		for (int j = 0; j < _mapSize.y; j++)
+			saveFile.write((char*)&_map[i][j], sizeof(Cell));
+
+	saveFile.close();
+
+	if (!saveFile.good())
+		printf("Error occured at writing to save file\n");
+}
+
+void LoadGame()
+{
+	ifstream saveFile("save.bin", ios::out | ios::binary);
+	if (!saveFile)
+	{
+		printf("Save file was not opened!\n");
+		return;
+	}
+
+	int mineCount = 0;
+
+	saveFile.read((char*)&_mapSize, sizeof(Vector2));
+	saveFile.read((char*)&mineCount, sizeof(int));
+	
+	//Generate map
+	_map = new Cell * [_mapSize.x];
+	for (int i = 0; i < _mapSize.x; i++)
+		_map[i] = new Cell[_mapSize.y];
+	
+	//Read cells info
+	for (int i = 0; i < _mapSize.x; i++)
+		for (int j = 0; j < _mapSize.y; j++)
+			saveFile.read((char*)&_map[i][j], sizeof(Cell));
+
+	if (!saveFile.good())
+		printf("Error occured at reading save file\n");
 }
 
 int main()
