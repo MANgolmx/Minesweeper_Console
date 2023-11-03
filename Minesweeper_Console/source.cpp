@@ -307,8 +307,8 @@ void SaveGame()
 		return;
 	}
 
-	fwrite(&_mapSize.x, sizeof(int), 1, saveFile);
-	fwrite(&_mapSize.y, sizeof(int), 1, saveFile);
+	fwrite(&_mapSize, sizeof(Vector2), 1, saveFile);
+	fwrite(&_cursorPosition, sizeof(Vector2), 1, saveFile);
 
 	for (int i = 0; i < _mapSize.x; i++)
 		for (int j = 0; j < _mapSize.y; j++)
@@ -323,15 +323,15 @@ int LoadGame()
 {
 	FILE* saveFile;
 
-	if (fopen_s(&saveFile, "save.bin", "rb") == NULL)
+	if (fopen_s(&saveFile, "save.bin", "rb") != 0)
 	{
-		printf("Error ocured while opening save file");
+		printf("Error ocured while opening save file\n");
 		system("pause");
 		return 1;
 	}
 
-	fread(&_mapSize.x, sizeof(int), 1, saveFile);
-	fread(&_mapSize.y, sizeof(int), 1, saveFile);
+	fread(&_mapSize, sizeof(Vector2), 1, saveFile);
+	fread(&_cursorPosition, sizeof(Vector2), 1, saveFile);
 
 	//Generate map
 	_map = new Cell * [_mapSize.x];
@@ -341,7 +341,7 @@ int LoadGame()
 	//Read cells info
 	for (int i = 0; i < _mapSize.x; i++)
 		for (int j = 0; j < _mapSize.y; j++)
-			fwrite(&_map[i][j], sizeof(Cell), 1, saveFile);
+			fread(&_map[i][j], sizeof(Cell), 1, saveFile);
 
 	fclose(saveFile);
 
@@ -458,15 +458,15 @@ int main()
 				inMenu = false;
 				int mineCount = GetMapInfo();
 				GenerateMap(mineCount);
+				_cursorPosition = { 0, 0 };
 			}
 			else
 			{
 				inMenu = false;
-				if (!LoadGame())
+				if (LoadGame() != 0)
 					inMenu = true;
 			}
 		}
-		_cursorPosition = { 0, 0 };
 		isPlaying = true;
 		//Game loop
 		while (isPlaying)
