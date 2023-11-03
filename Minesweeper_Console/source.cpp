@@ -46,12 +46,54 @@ Cell** _map;
 
 Vector2 _cursorPosition = {0,0};
 
-//Sets up map size and returns mines count
 int MainMenu()
 {
-	printf("--> New game");
-	system("pause > null");
+	int input;
+	int choice = 0;
+	while (true)
+	{
+		system("cls");
+		if (choice == 0)
+			printf("---> ");
+		printf("New game\n");
+		if (choice == 1)
+			printf("---> ");
+		printf("Load game\n");
 
+		input = _getch();
+
+		if (input == 224) //Arrows
+		{
+			input = _getch();
+			switch (input) {
+			case 72: //UP
+				if (choice > 0)
+					choice--;
+				break;
+			case 80: //DOWN
+				if (choice < 1)
+					choice++;
+				break;
+			}
+		}
+		else if (input == 13) //ENTER
+		{
+			switch (choice)
+			{
+			case 0:
+				return 0;
+			case 1:
+				return 1;
+			}
+		}
+	}
+
+	return 0;
+}
+
+//Sets up map size and returns mines count
+int GetMapInfo()
+{
 	bool wrongInputFlag = true;
 
 	do
@@ -254,6 +296,58 @@ void OpenCells(Vector2 pos)
 	if (pos.x < _mapSize.x - 1 && pos.y < _mapSize.y - 1) OpenCells({ pos.x + 1, pos.y + 1 });
 }
 
+void SaveGame()
+{
+	FILE* saveFile;
+
+	if (fopen_s(&saveFile, "save.bin", "wb") != 0)
+	{
+		printf("Error ocured while opening save file");
+		system("pause");
+		return;
+	}
+
+	fwrite(&_mapSize.x, sizeof(int), 1, saveFile);
+	fwrite(&_mapSize.y, sizeof(int), 1, saveFile);
+
+	for (int i = 0; i < _mapSize.x; i++)
+		for (int j = 0; j < _mapSize.y; j++)
+			fwrite(&_map[i][j], sizeof(Cell), 1, saveFile);
+
+	fclose(saveFile);
+
+	printf("Save created!");
+}
+
+int LoadGame()
+{
+	FILE* saveFile;
+
+	if (fopen_s(&saveFile, "save.bin", "rb") == NULL)
+	{
+		printf("Error ocured while opening save file");
+		system("pause");
+		return 1;
+	}
+
+	fread(&_mapSize.x, sizeof(int), 1, saveFile);
+	fread(&_mapSize.y, sizeof(int), 1, saveFile);
+
+	//Generate map
+	_map = new Cell * [_mapSize.x];
+	for (int i = 0; i < _mapSize.x; i++)
+		_map[i] = new Cell[_mapSize.y];
+
+	//Read cells info
+	for (int i = 0; i < _mapSize.x; i++)
+		for (int j = 0; j < _mapSize.y; j++)
+			fwrite(&_map[i][j], sizeof(Cell), 1, saveFile);
+
+	fclose(saveFile);
+
+	return 0;
+}
+
 //Scans and handles all input
 int ManageInput()
 {
@@ -296,19 +390,19 @@ int ManageInput()
 		return 0;
 	}
 
-	if (input == 8 || input == 46) {
+	if (input == 8 || input == 46) { // DELETE
 		_map[_cursorPosition.x][_cursorPosition.y].isUndefined = false;
 		_map[_cursorPosition.x][_cursorPosition.y].isFlagged = false;
 		return 0;
 	}
 
-	if (input == 9) {
+	if (input == 9) { // TAB
 		if (_map[_cursorPosition.x][_cursorPosition.y].isUndefined) _map[_cursorPosition.x][_cursorPosition.y].isUndefined = false;
 		_map[_cursorPosition.x][_cursorPosition.y].isFlagged = !_map[_cursorPosition.x][_cursorPosition.y].isFlagged;
 		return 0;
 	}
 
-	if (input == 13 && !_map[_cursorPosition.x][_cursorPosition.y].isFlagged) {
+	if (input == 13 && !_map[_cursorPosition.x][_cursorPosition.y].isFlagged) { // ENTER
 		if (!_map[_cursorPosition.x][_cursorPosition.y].isMine && CalculateAdjascentMines(_cursorPosition) == 0)
 			OpenCells(_cursorPosition);
 		else
@@ -324,10 +418,13 @@ int ManageInput()
 		return 1;
 	}
 
-	switch (char(input)) {
+	switch (char(input)) { // CHARACHTERS INPUT
 	case 'q': case 'Q': 
 		if (_map[_cursorPosition.x][_cursorPosition.y].isFlagged) _map[_cursorPosition.x][_cursorPosition.y].isFlagged = false;
 		_map[_cursorPosition.x][_cursorPosition.y].isUndefined = !_map[_cursorPosition.x][_cursorPosition.y].isUndefined; break;
+	case 's': case 'S':
+		SaveGame();
+		break;
 	}
 	return 0;
 }
@@ -342,55 +439,6 @@ int CheckWin()
 	return 1;
 }
 
-void SaveGame(int mineCount)
-{
-	ofstream saveFile("save.bin", ios::out | ios::binary);
-	if (!saveFile)
-	{
-		printf("Save file was not opened!\n");
-		return;
-	}
-
-	saveFile.write((char*)&_mapSize, sizeof(Vector2));
-	saveFile.write((char*)&mineCount, sizeof(int));
-	for (int i = 0; i < _mapSize.x; i++)
-		for (int j = 0; j < _mapSize.y; j++)
-			saveFile.write((char*)&_map[i][j], sizeof(Cell));
-
-	saveFile.close();
-
-	if (!saveFile.good())
-		printf("Error occured at writing to save file\n");
-}
-
-void LoadGame()
-{
-	ifstream saveFile("save.bin", ios::out | ios::binary);
-	if (!saveFile)
-	{
-		printf("Save file was not opened!\n");
-		return;
-	}
-
-	int mineCount = 0;
-
-	saveFile.read((char*)&_mapSize, sizeof(Vector2));
-	saveFile.read((char*)&mineCount, sizeof(int));
-	
-	//Generate map
-	_map = new Cell * [_mapSize.x];
-	for (int i = 0; i < _mapSize.x; i++)
-		_map[i] = new Cell[_mapSize.y];
-	
-	//Read cells info
-	for (int i = 0; i < _mapSize.x; i++)
-		for (int j = 0; j < _mapSize.y; j++)
-			saveFile.read((char*)&_map[i][j], sizeof(Cell));
-
-	if (!saveFile.good())
-		printf("Error occured at reading save file\n");
-}
-
 int main()
 {
 	bool isPlaying = true;
@@ -399,9 +447,26 @@ int main()
 	//Program loop
 	while (true)
 	{
-		int mineCount = MainMenu();
-		GenerateMap(mineCount);
+		bool inMenu = true;
 
+		while (inMenu)
+		{
+			int menu = MainMenu();
+			
+			if (menu == 0)
+			{
+				inMenu = false;
+				int mineCount = GetMapInfo();
+				GenerateMap(mineCount);
+			}
+			else
+			{
+				inMenu = false;
+				if (!LoadGame())
+					inMenu = true;
+			}
+		}
+		_cursorPosition = { 0, 0 };
 		isPlaying = true;
 		//Game loop
 		while (isPlaying)
